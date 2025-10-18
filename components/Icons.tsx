@@ -82,6 +82,13 @@ export const PlusIcon: React.FC<{ className?: string }> = ({ className }) => (
     </Icon>
 );
 
+// FIX: Add missing FilterIcon component.
+export const FilterIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <Icon className={className}>
+        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
+    </Icon>
+);
+
 export const FolderIcon: React.FC<{ className?: string }> = ({ className }) => (
     <Icon className={className}>
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
