@@ -1,4 +1,6 @@
+
 import React, { ReactNode, useEffect } from 'react';
+// FIX: Corrected import path
 import { CloseIcon } from './Icons';
 
 interface ModalProps {

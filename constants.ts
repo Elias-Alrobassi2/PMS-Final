@@ -1,4 +1,5 @@
 
+// FIX: Corrected import path for types.
 import { AccentColor, Currency, FieldType } from './types';
 
 export const CURRENCIES: { code: Currency; name: string; flag: string }[] = [

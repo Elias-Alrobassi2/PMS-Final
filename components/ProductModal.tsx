@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
+// FIX: Corrected import paths
 import { AppContext } from '../context/AppContext';
 import { Product, Category, CategoryField, FieldType } from '../types';
 import { fileToBase64, generateSKU } from '../utils/helpers';

@@ -1,47 +1,16 @@
 
-export type Page = 'dashboard' | 'products' | 'categories' | 'settings';
+export type Page = 'dashboard' | 'products' | 'categories' | 'users' | 'settings' | 'activity';
 
-export type Theme = 'light' | 'dark';
-export type AccentColor = 'blue' | 'green' | 'purple' | 'red';
 export type Currency = 'SAR' | 'USD' | 'YER';
+export type AccentColor = 'blue' | 'green' | 'purple' | 'red';
+export type Theme = 'light' | 'dark' | 'system';
 export type CalendarType = 'gregorian' | 'hijri';
 
-export enum FieldType {
-  SHORT_TEXT = 'نص قصير',
-  LONG_TEXT = 'نص طويل',
-  DROPDOWN = 'قائمة منسدلة',
-  RADIO = 'اختيار من متعدد',
-  CHECKBOX = 'مربع اختيار',
-  NUMBER = 'رقم',
-  DATE = 'تاريخ',
-}
-
 export interface Settings {
-  theme: Theme;
-  accentColor: AccentColor;
   currency: Currency;
+  accentColor: AccentColor;
+  theme: Theme;
   calendar: CalendarType;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  parentId: string | null;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CategoryField {
-  id: string;
-  categoryId: string;
-  label: string;
-  key: string;
-  type: FieldType;
-  options: string[];
-  required: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Product {
@@ -49,43 +18,118 @@ export interface Product {
   name: string;
   sku: string;
   categoryId: string | null;
-  unit: string;
   price: number;
   quantity: number;
+  unit: string;
   description: string;
-  image?: string; // base64 string
-  dynamicFields: Record<string, any>; // { [field.key]: value }
-  createdAt: string;
-  updatedAt: string;
+  image: string; // base64 string
+  dynamicFields: Record<string, any>;
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
 }
 
-export interface AppState {
+export enum FieldType {
+    SHORT_TEXT = 'نص قصير',
+    LONG_TEXT = 'نص طويل',
+    NUMBER = 'رقم',
+    DATE = 'تاريخ',
+    CHECKBOX = 'مربع اختيار',
+    DROPDOWN = 'قائمة منسدلة',
+    RADIO = 'اختيار من متعدد',
+}
+
+export interface CategoryField {
+    id: string;
+    key: string;
+    categoryId: string;
+    label: string;
+    type: FieldType;
+    options: string[]; // for dropdown or radio
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  parentId: string | null;
+}
+
+export type Role = 'admin' | 'manager' | 'user' | 'viewer';
+export type UserStatus = 'active' | 'suspended';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: Role;
+  status: UserStatus;
+  createdAt: string; // ISO string
+  mfaEnabled: boolean;
+  mfaSecret?: string;
+}
+
+export type Permission = 
+    'dashboard:view' |
+    'products:view' | 'products:create' | 'products:edit' | 'products:delete' |
+    'categories:view' | 'categories:create' | 'categories:edit' | 'categories:delete' |
+    'users:view' | 'users:create' | 'users:edit' | 'users:delete' |
+    'settings:view' | 'settings:edit' |
+    'activity:view';
+
+export interface ActivityLog {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string;
+  timestamp: string; // ISO string
+}
+
+export interface AppContextType {
+  // State
   products: Product[];
   categories: Category[];
   categoryFields: CategoryField[];
+  users: User[];
   settings: Settings;
-}
+  currentUser: User | null;
+  permissions: Record<Role, Permission[]>;
+  activityLog: ActivityLog[];
 
-export interface AppContextType extends AppState {
-  setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
+  // Auth
+  login: (email: string, password: string) => boolean;
+  logout: () => void;
+  
+  // Products
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateProduct: (product: Product) => void;
-  deleteProduct: (productId: string) => void;
-  
-  setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
-  addCategory: (category: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  deleteProduct: (id: string) => void;
+  deleteProducts: (ids: string[]) => void;
+  updateProductsCategory: (ids: string[], categoryId: string | null) => void;
+
+  // Categories
+  addCategory: (category: Omit<Category, 'id'>) => void;
   updateCategory: (category: Category) => void;
-  deleteCategory: (categoryId: string) => void;
+  deleteCategory: (id: string) => void;
   
-  setCategoryFields: React.Dispatch<React.SetStateAction<CategoryField[]>>;
-  addCategoryField: (field: Omit<CategoryField, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  // Category Fields
+  addCategoryField: (field: Omit<CategoryField, 'id' | 'key'>) => void;
   updateCategoryField: (field: CategoryField) => void;
-  deleteCategoryField: (fieldId: string) => void;
+  deleteCategoryField: (id: string) => void;
 
-  setSettings: React.Dispatch<React.SetStateAction<Settings>>;
-  updateSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
+  // Users
+  addUser: (user: Omit<User, 'id' | 'createdAt' | 'mfaEnabled' | 'mfaSecret' | 'passwordHash'> & {password: string}) => void;
+  updateUser: (user: User) => void;
+  deleteUser: (id: string) => void;
+  deleteUsers: (ids: string[]) => void;
+  updateUsersStatus: (ids: string[], status: UserStatus) => void;
+  
+  // Settings
+  setSettings: (value: Settings | ((val: Settings) => Settings)) => void;
+  
+  // Permissions
+  updatePermission: (role: Role, permission: Permission, granted: boolean) => void;
 
+  // Backup
   backupData: () => void;
-  importData: (file: File) => Promise<boolean>;
-  resetData: () => void;
+  restoreData: (file: File) => Promise<void>;
 }

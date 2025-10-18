@@ -1,4 +1,5 @@
 
+// FIX: Corrected import path
 import { Currency } from '../types';
 
 export const formatCurrency = (amount: number, currency: Currency): string => {

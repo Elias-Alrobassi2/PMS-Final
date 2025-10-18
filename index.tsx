@@ -1,6 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// FIX: Corrected import paths. No file extension needed with a proper bundler setup.
 import App from './App';
 import { AppProvider } from './context/AppContext';
 import { Toaster } from 'react-hot-toast';

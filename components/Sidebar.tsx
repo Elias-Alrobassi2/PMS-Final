@@ -1,59 +1,84 @@
-import React from 'react';
+
+import React, { useContext } from 'react';
+// FIX: Corrected import paths
+import { AppContext } from '../context/AppContext';
 import { Page } from '../types';
-import { DashboardIcon, BoxIcon, CategoryIcon, SettingsIcon } from './Icons';
+import { DashboardIcon, ProductsIcon, CategoriesIcon, UsersIcon, SettingsIcon, LogoutIcon, BoxIcon, ActivityIcon } from './Icons';
+import { checkPermission } from '../utils/permissions';
 
 interface SidebarProps {
   activePage: Page;
   setActivePage: (page: Page) => void;
-  className?: string;
+  isSidebarOpen: boolean;
 }
 
-const NavItem: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onClick: () => void;
-}> = ({ icon, label, isActive, onClick }) => (
-  <li
+const NavItem: React.FC<{ icon: React.ReactNode; label: string; isActive: boolean; onClick: () => void }> = ({ icon, label, isActive, onClick }) => (
+  <button
     onClick={onClick}
-    className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-right ${
       isActive
-        ? 'bg-accent-blue text-white shadow-lg'
-        : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+        ? 'bg-accent-blue text-white'
+        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
     }`}
   >
     {icon}
     <span className="font-semibold">{label}</span>
-  </li>
+  </button>
 );
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, className }) => {
-  const navItems: { page: Page; label: string; icon: React.ReactNode }[] = [
-    { page: 'dashboard', label: 'لوحة التحكم', icon: <DashboardIcon className="w-6 h-6" /> },
-    { page: 'products', label: 'المنتجات', icon: <BoxIcon className="w-6 h-6" /> },
-    { page: 'categories', label: 'الفئات', icon: <CategoryIcon className="w-6 h-6" /> },
-    { page: 'settings', label: 'الإعدادات', icon: <SettingsIcon className="w-6 h-6" /> },
+const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, isSidebarOpen }) => {
+  const { logout, currentUser, permissions } = useContext(AppContext);
+
+  const navItems: { page: Page; label: string; icon: React.ReactNode; permission: string }[] = [
+    { page: 'dashboard', label: 'لوحة التحكم', icon: <DashboardIcon className="w-5 h-5" />, permission: 'dashboard:view' },
+    { page: 'products', label: 'المنتجات', icon: <ProductsIcon className="w-5 h-5" />, permission: 'products:view' },
+    { page: 'categories', label: 'الفئات', icon: <CategoriesIcon className="w-5 h-5" />, permission: 'categories:view' },
+    { page: 'users', label: 'المستخدمون', icon: <UsersIcon className="w-5 h-5" />, permission: 'users:view' },
+    { page: 'settings', label: 'الإعدادات', icon: <SettingsIcon className="w-5 h-5" />, permission: 'settings:view' },
+    { page: 'activity', label: 'سجل النشاط', icon: <ActivityIcon className="w-5 h-5" />, permission: 'activity:view' },
   ];
+  
+  const accessibleNavItems = navItems.filter(item => checkPermission(currentUser, item.permission, permissions));
 
   return (
-    <aside className={`bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 w-64 p-4 space-y-8 flex-shrink-0 ${className}`}>
-      <div className="flex items-center gap-3 p-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-blue"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        <h1 className="text-2xl font-bold">مخزني</h1>
+    <aside className={`bg-white dark:bg-gray-800 border-e dark:border-gray-700 flex flex-col transition-all duration-300 fixed md:relative h-full z-40 ${isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden'} md:w-64`}>
+      <div className="flex items-center justify-center h-20 border-b dark:border-gray-700 flex-shrink-0">
+        <div className="flex items-center gap-2">
+           <BoxIcon className="w-8 h-8 text-accent-blue" />
+           <span className="text-xl font-bold">الصدارة</span>
+        </div>
       </div>
-      <nav>
-        <ul className="space-y-3">
-          {navItems.map(item => (
-            <NavItem
-              key={item.page}
-              label={item.label}
-              icon={item.icon}
-              isActive={activePage === item.page}
-              onClick={() => setActivePage(item.page)}
-            />
-          ))}
-        </ul>
+      <nav className="flex-1 p-4 space-y-2">
+        {accessibleNavItems.map((item) => (
+          <NavItem
+            key={item.page}
+            icon={item.icon}
+            label={item.label}
+            isActive={activePage === item.page}
+            onClick={() => setActivePage(item.page)}
+          />
+        ))}
       </nav>
+      <div className="p-4 border-t dark:border-gray-700">
+         <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 mb-4">
+            <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center font-bold text-accent-blue">
+                    {currentUser?.name.charAt(0)}
+                </div>
+                <div className="text-right flex-1 overflow-hidden">
+                    <div className="font-semibold text-sm truncate">{currentUser?.name}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{currentUser?.email}</div>
+                </div>
+            </div>
+        </div>
+        <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+        >
+            <LogoutIcon className="w-5 h-5" />
+            <span className="font-semibold">تسجيل الخروج</span>
+        </button>
+      </div>
     </aside>
   );
 };
