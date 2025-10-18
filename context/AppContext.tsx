@@ -1,10 +1,9 @@
-
 import React, { createContext, ReactNode, useState } from 'react';
 import { AppContextType, Product, Category, CategoryField, User, Settings, UserStatus, Permission, Role, ActivityLog } from '../types';
 import useLocalStorage from '../hooks/useLocalStorage';
 import toast from 'react-hot-toast';
 import { initialData } from './initialData'; // Using mock data
-import { permissionDescriptions } from '../utils/permissions';
+import { permissionDescriptions, checkPermission, ROLES_HIERARCHY } from '../utils/permissions';
 
 const roleMap: Record<Role, { label: string }> = {
   admin: { label: 'مدير' },
@@ -24,7 +23,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [categories, setCategories] = useLocalStorage<Category[]>('categories', initialData.categories);
   const [categoryFields, setCategoryFields] = useLocalStorage<CategoryField[]>('categoryFields', initialData.categoryFields);
   const [users, setUsers] = useLocalStorage<User[]>('users', initialData.users);
-  const [settings, setSettings] = useLocalStorage<Settings>('settings', initialData.settings);
+  // FIX: Renamed the state setter from `useLocalStorage` to avoid conflict with the wrapper function below.
+  const [settings, setSettingsInStorage] = useLocalStorage<Settings>('settings', initialData.settings);
   const [permissions, setPermissions] = useLocalStorage<Record<Role, Permission[]>>('permissions', initialData.permissions);
   const [activityLog, setActivityLog] = useLocalStorage<ActivityLog[]>('activityLog', initialData.activityLog);
 
@@ -72,6 +72,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const addProduct = (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!checkPermission(currentUser, 'products:create', permissions)) {
+        toast.error('ليس لديك الصلاحية لإضافة منتجات.');
+        return;
+    }
     const newProduct: Product = {
       ...product,
       id: crypto.randomUUID(),
@@ -84,12 +88,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const updateProduct = (updatedProduct: Product) => {
+    if (!checkPermission(currentUser, 'products:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لتعديل المنتجات.');
+        return;
+    }
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? { ...updatedProduct, updatedAt: new Date().toISOString() } : p));
     logActivity(`حدّث المنتج: ${updatedProduct.name}`);
     toast.success('تم تحديث المنتج بنجاح.');
   };
   
   const deleteProduct = (id: string) => {
+    if (!checkPermission(currentUser, 'products:delete', permissions)) {
+        toast.error('ليس لديك الصلاحية لحذف المنتجات.');
+        return;
+    }
     const productName = products.find(p => p.id === id)?.name || 'غير معروف';
     setProducts(prev => prev.filter(p => p.id !== id));
     logActivity(`حذف المنتج: ${productName}`);
@@ -97,12 +109,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const deleteProducts = (ids: string[]) => {
+    if (!checkPermission(currentUser, 'products:delete', permissions)) {
+        toast.error('ليس لديك الصلاحية لحذف المنتجات.');
+        return;
+    }
     setProducts(prev => prev.filter(p => !ids.includes(p.id)));
     logActivity(`حذف ${ids.length} منتجات بشكل جماعي.`);
     toast.success(`تم حذف ${ids.length} منتجات.`);
   };
 
   const updateProductsCategory = (ids: string[], categoryId: string | null) => {
+    if (!checkPermission(currentUser, 'products:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لتعديل المنتجات.');
+        return;
+    }
     const categoryName = categories.find(c => c.id === categoryId)?.name || 'بدون فئة';
     setProducts(prev => prev.map(p => ids.includes(p.id) ? { ...p, categoryId, updatedAt: new Date().toISOString() } : p));
     logActivity(`غير فئة ${ids.length} منتجات إلى '${categoryName}'.`);
@@ -110,6 +130,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const addCategory = (category: Omit<Category, 'id'>) => {
+    if (!checkPermission(currentUser, 'categories:create', permissions)) {
+        toast.error('ليس لديك الصلاحية لإضافة فئات.');
+        return;
+    }
     const newCategory: Category = { ...category, id: crypto.randomUUID() };
     setCategories(prev => [...prev, newCategory]);
     logActivity(`أضاف الفئة: ${newCategory.name}`);
@@ -117,12 +141,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const updateCategory = (updatedCategory: Category) => {
+    if (!checkPermission(currentUser, 'categories:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لتعديل الفئات.');
+        return;
+    }
     setCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
     logActivity(`حدّث الفئة: ${updatedCategory.name}`);
     toast.success('تم تحديث الفئة.');
   };
 
   const deleteCategory = (id: string) => {
+    if (!checkPermission(currentUser, 'categories:delete', permissions)) {
+        toast.error('ليس لديك الصلاحية لحذف الفئات.');
+        return;
+    }
     const categoryName = categories.find(c => c.id === id)?.name || 'غير معروف';
     setCategories(prev => prev.filter(c => c.id !== id));
     logActivity(`حذف الفئة: ${categoryName}`);
@@ -130,6 +162,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const addCategoryField = (field: Omit<CategoryField, 'id' | 'key'>) => {
+    if (!checkPermission(currentUser, 'categories:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لتعديل حقول الفئات.');
+        return;
+    }
     const newField: CategoryField = {
       ...field,
       id: crypto.randomUUID(),
@@ -142,12 +178,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const updateCategoryField = (updatedField: CategoryField) => {
+    if (!checkPermission(currentUser, 'categories:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لتعديل حقول الفئات.');
+        return;
+    }
     setCategoryFields(prev => prev.map(f => f.id === updatedField.id ? updatedField : f));
     logActivity(`حدّث الحقل: ${updatedField.label}`);
     toast.success('تم تحديث الحقل.');
   };
   
   const deleteCategoryField = (id: string) => {
+    if (!checkPermission(currentUser, 'categories:delete', permissions)) {
+        toast.error('ليس لديك الصلاحية لحذف حقول الفئات.');
+        return;
+    }
     const fieldName = categoryFields.find(f => f.id === id)?.label || 'غير معروف';
     setCategoryFields(prev => prev.filter(f => f.id !== id));
     logActivity(`حذف الحقل: ${fieldName}`);
@@ -155,6 +199,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const addUser = (user: Omit<User, 'id' | 'createdAt' | 'mfaEnabled' | 'mfaSecret' | 'passwordHash'> & {password: string}) => {
+    if (!checkPermission(currentUser, 'users:create', permissions)) {
+        toast.error('ليس لديك الصلاحية لإضافة مستخدمين.');
+        return;
+    }
     if (users.some(u => u.email === user.email)) {
         toast.error('البريد الإلكتروني مستخدم بالفعل.');
         throw new Error('Email already exists');
@@ -175,12 +223,41 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const updateUser = (updatedUser: User) => {
+    if (!checkPermission(currentUser, 'users:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لتعديل المستخدمين.');
+        return;
+    }
+    const currentUserRoleIndex = currentUser ? ROLES_HIERARCHY.indexOf(currentUser.role) : -1;
+    const targetUser = users.find(u => u.id === updatedUser.id);
+    const targetUserRoleIndex = targetUser ? ROLES_HIERARCHY.indexOf(targetUser.role) : -1;
+
+    if (currentUserRoleIndex > targetUserRoleIndex) {
+        toast.error('لا يمكنك تعديل مستخدم له دور أعلى من دورك.');
+        return;
+    }
+     if (updatedUser.id === currentUser?.id && updatedUser.role !== currentUser?.role) {
+        toast.error('لا يمكنك تغيير دور حسابك الخاص.');
+        return;
+    }
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
     logActivity(`حدّث بيانات المستخدم: ${updatedUser.name}`);
     toast.success('تم تحديث المستخدم.');
   };
 
   const deleteUser = (id: string) => {
+    if (!checkPermission(currentUser, 'users:delete', permissions)) {
+        toast.error('ليس لديك الصلاحية لحذف المستخدمين.');
+        return;
+    }
+    const targetUser = users.find(u => u.id === id);
+    if(targetUser){
+        const currentUserRoleIndex = currentUser ? ROLES_HIERARCHY.indexOf(currentUser.role) : -1;
+        const targetUserRoleIndex = ROLES_HIERARCHY.indexOf(targetUser.role);
+        if (currentUserRoleIndex > targetUserRoleIndex) {
+            toast.error('لا يمكنك حذف مستخدم له دور أعلى من دورك.');
+            return;
+        }
+    }
     const userName = users.find(u => u.id === id)?.name || 'غير معروف';
     setUsers(prev => prev.filter(u => u.id !== id));
     logActivity(`حذف المستخدم: ${userName}`);
@@ -188,19 +265,51 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const deleteUsers = (ids: string[]) => {
+    if (!checkPermission(currentUser, 'users:delete', permissions)) {
+        toast.error('ليس لديك الصلاحية لحذف المستخدمين.');
+        return;
+    }
+    const currentUserRoleIndex = currentUser ? ROLES_HIERARCHY.indexOf(currentUser.role) : -1;
+    const usersToDelete = users.filter(u => ids.includes(u.id));
+    for(const user of usersToDelete) {
+        if(ROLES_HIERARCHY.indexOf(user.role) < currentUserRoleIndex) {
+            toast.error(`لا يمكنك حذف المستخدم '${user.name}' لأنه يمتلك دورًا أعلى.`);
+            return;
+        }
+    }
     setUsers(prev => prev.filter(u => !ids.includes(u.id)));
     logActivity(`حذف ${ids.length} مستخدمين بشكل جماعي.`);
     toast.success(`تم حذف ${ids.length} مستخدمين.`);
   };
   
   const updateUsersStatus = (ids: string[], status: UserStatus) => {
-      setUsers(prev => prev.map(u => ids.includes(u.id) ? {...u, status} : u));
-      const statusText = status === 'active' ? 'تفعيل' : 'إيقاف';
-      logActivity(`${statusText} ${ids.length} مستخدمين.`);
-      toast.success(`تم تحديث حالة ${ids.length} مستخدمين.`);
+    if (!checkPermission(currentUser, 'users:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لتعديل المستخدمين.');
+        return;
+    }
+    setUsers(prev => prev.map(u => ids.includes(u.id) ? {...u, status} : u));
+    const statusText = status === 'active' ? 'تفعيل' : 'إيقاف';
+    logActivity(`${statusText} ${ids.length} مستخدمين.`);
+    toast.success(`تم تحديث حالة ${ids.length} مستخدمين.`);
+  }
+  
+  // FIX: This function now correctly wraps the state setter from useLocalStorage, adding permission checks.
+  const setSettings = (value: Settings | ((val: Settings) => Settings)) => {
+      if (!checkPermission(currentUser, 'settings:edit', permissions)) {
+          toast.error('ليس لديك الصلاحية لتعديل الإعدادات.');
+          return;
+      }
+      setSettingsInStorage(value);
+      logActivity(`قام بتغيير الإعدادات.`);
   }
 
   const updatePermission = (role: Role, permission: Permission, granted: boolean) => {
+    const currentUserRoleIndex = currentUser ? ROLES_HIERARCHY.indexOf(currentUser.role) : -1;
+    const targetRoleIndex = ROLES_HIERARCHY.indexOf(role);
+    if (currentUserRoleIndex > targetRoleIndex) {
+        toast.error('لا يمكنك تعديل صلاحيات دور أعلى من دورك.');
+        return;
+    }
     setPermissions(prev => {
         const currentPermissions = new Set(prev[role]);
         if (granted) {
@@ -218,6 +327,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const backupData = () => {
+    if (!checkPermission(currentUser, 'settings:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لإنشاء نسخة احتياطية.');
+        return;
+    }
     const data = { products, categories, categoryFields, users, settings, permissions, activityLog };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -231,6 +344,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const restoreData = (file: File): Promise<void> => {
+     if (!checkPermission(currentUser, 'settings:edit', permissions)) {
+        toast.error('ليس لديك الصلاحية لاستعادة نسخة احتياطية.');
+        return Promise.reject(new Error('Permission denied'));
+    }
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -240,7 +357,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           setCategories(data.categories || []);
           setCategoryFields(data.categoryFields || []);
           setUsers(data.users || []);
-          setSettings(data.settings || initialData.settings);
+          setSettingsInStorage(data.settings || initialData.settings);
           setPermissions(data.permissions || initialData.permissions);
           setActivityLog(data.activityLog || []);
           logActivity('استعاد البيانات من نسخة احتياطية.');

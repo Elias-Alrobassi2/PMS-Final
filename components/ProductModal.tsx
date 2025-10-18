@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, useRef } from 'react';
 // FIX: Corrected import paths
 import { AppContext } from '../context/AppContext';
@@ -14,6 +13,7 @@ interface ProductModalProps {
   product?: Product | null;
   onClose: () => void;
   onSwitchMode: (newMode: 'add' | 'edit', product: Product) => void;
+  canEdit: boolean;
 }
 
 const emptyProduct: Omit<Product, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -28,7 +28,7 @@ const emptyProduct: Omit<Product, 'id' | 'createdAt' | 'updatedAt'> = {
   dynamicFields: {},
 };
 
-const ProductModal: React.FC<ProductModalProps> = ({ mode, product, onClose, onSwitchMode }) => {
+const ProductModal: React.FC<ProductModalProps> = ({ mode, product, onClose, onSwitchMode, canEdit }) => {
   const { addProduct, updateProduct, categories, categoryFields, settings } = useContext(AppContext);
   const [formData, setFormData] = useState<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>(emptyProduct);
   const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
@@ -189,7 +189,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ mode, product, onClose, onS
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <button onClick={onClose} className={btnSecondaryClasses}>إغلاق</button>
-          <button onClick={() => onSwitchMode('edit', product)} className={`${btnPrimaryClasses} flex items-center gap-2`}><EditIcon /> تعديل</button>
+          {canEdit && <button onClick={() => onSwitchMode('edit', product)} className={`${btnPrimaryClasses} flex items-center gap-2`}><EditIcon /> تعديل</button>}
         </div>
       </Modal>
     );

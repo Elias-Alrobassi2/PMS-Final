@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useContext } from 'react';
 // FIX: Corrected import paths
 import { AppContext } from '../context/AppContext';
@@ -216,7 +215,7 @@ const Products: React.FC = () => {
                 </div>
             )}
             
-            {isModalOpen && <ProductModal mode={modalMode} product={selectedProduct} onClose={closeModal} onSwitchMode={handleSwitchMode} />}
+            {isModalOpen && <ProductModal mode={modalMode} product={selectedProduct} onClose={closeModal} onSwitchMode={handleSwitchMode} canEdit={canEdit} />}
             {showCategoryModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">

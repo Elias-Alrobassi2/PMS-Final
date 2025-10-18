@@ -1,4 +1,3 @@
-
 import { Product, Category, CategoryField, User, Settings, FieldType, Role, UserStatus, AccentColor, Theme, CalendarType, Currency, Permission, ActivityLog } from '../types';
 
 const now = new Date().toISOString();
@@ -119,13 +118,13 @@ const managerPermissions: Permission[] = [
     'dashboard:view',
     'products:view', 'products:create', 'products:edit', 'products:delete',
     'categories:view', 'categories:create', 'categories:edit', 'categories:delete',
-    'users:view', 'users:create', 'users:edit', 'users:delete',
+    'users:view', 'users:create', 'users:edit',
     'settings:view',
 ];
 
 const userPermissions: Permission[] = [
     'dashboard:view',
-    'products:view', 'products:create', 'products:edit',
+    'products:view', 'products:create',
     'categories:view',
 ];
 

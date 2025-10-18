@@ -1,4 +1,3 @@
-
 import { User, Role, Permission } from '../types';
 
 export const ROLES_HIERARCHY: Role[] = ['admin', 'manager', 'user', 'viewer'];
